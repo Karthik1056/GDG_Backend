@@ -24,7 +24,7 @@
 //     // Listen for drawing data
 //     socket.on('submitDrawing', (data) => {
 //         // data = { name: "Alex", image: "base64..." }
-        
+
 //         // Broadcast to everyone (Projector + other students)
 //         io.emit('newDrawing', data);
 //     });
@@ -49,7 +49,7 @@ const io = new Server(server, {
 
 // --- MEMORY OPTIMIZATION FOR 200 USERS ---
 // Only store the last 50 images to prevent server crash
-let drawingHistory = []; 
+let drawingHistory = [];
 
 app.get('/', (req, res) => {
     res.send(`✅ Server Running! Holding ${drawingHistory.length} drawings.`);
@@ -62,14 +62,23 @@ io.on('connection', (socket) => {
     socket.on('submitDrawing', (data) => {
         // 2. Save to Memory
         drawingHistory.push(data);
-        
+
         // 3. Prevent Memory Leak (Keep only last 50)
         if (drawingHistory.length > 50) {
-            drawingHistory.shift(); 
+            drawingHistory.shift();
         }
 
         // 4. Broadcast to Projector & other students
         io.emit('newDrawing', data);
+    });
+    socket.on('adminClear', () => {
+        console.log("Admin cleared the board!");
+
+        // A. Wipe the memory
+        drawingHistory = [];
+
+        // B. Tell everyone to wipe their screens
+        io.emit('forceClear');
     });
 });
 
